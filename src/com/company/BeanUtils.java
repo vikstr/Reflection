@@ -2,6 +2,7 @@ package com.company;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 public class BeanUtils {
@@ -34,8 +35,8 @@ public class BeanUtils {
 
     public static void assign(Object to, Object from) throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         if((to == null)||(from == null)) return;
-        Method[] getters = from.getClass().getDeclaredMethods();
-        Method[] setters = to.getClass().getDeclaredMethods();
+        List<Method> getters = getMethods(from,"get");
+        List<Method> setters = getMethods(to,"set");
         for (Method getter : getters) {
             String getterName = getter.getName().substring(3);
             boolean getType = getter.getName().contains("get");
@@ -45,13 +46,24 @@ public class BeanUtils {
                 if ((setterName.equals(getterName))&&
                         (!getter.getReturnType().equals(void.class))&&
                         (setter.getParameterTypes().length == 1) &&(setType & getType)) {
-                    Method methodGetFrom = from.getClass().getMethod("get" + getterName);
-                    Object attribute = methodGetFrom.invoke(from);
-                    Object attributeClass = attribute.getClass();
-                    Method methodSetTo = to.getClass().getMethod("set" + setterName, (Class<?>) attributeClass);
-                    methodSetTo.invoke(to, attribute);
+                    try {
+                            setter.invoke(to,getter.invoke(from));
+                        }catch(Exception e)
+                    {
+                        e.printStackTrace();
+                    }
                 }
             }
         }
+    }
+    private static List<Method> getMethods(Object o,String pattern) {
+        Method[] methods = o.getClass().getMethods();
+        List<Method> ListOfMethods = new ArrayList<>();
+        for (Method method : methods) {
+            if (method.getName().toLowerCase().startsWith(pattern.toLowerCase())) {
+                ListOfMethods.add(method);
+            }
+        }
+        return ListOfMethods;
     }
 }
